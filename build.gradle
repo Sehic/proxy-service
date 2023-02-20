@@ -1,0 +1,82 @@
+buildscript {
+	ext {
+		springDependencyVersion = '2.1.1.RELEASE'
+		grpcVersion = '1.45.1'
+		protobufVersion = '3.19.4'
+		protobufGradleVersion = '0.8.18'
+	}
+	repositories {
+		mavenCentral()
+	}
+	dependencies {
+		classpath "com.google.protobuf:protobuf-gradle-plugin:${protobufGradleVersion}"
+	}
+}
+
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '2.1.1.RELEASE'
+	id 'com.google.protobuf' version '0.8.18'
+}
+
+repositories {
+	mavenCentral()
+	flatDir {
+		dirs 'libs'
+	}
+}
+
+sourceSets {
+	main {
+		proto {
+			srcDir 'xprotos/java'
+		}
+		java {
+			// include self written and generated code
+			srcDirs 'src/main/java', 'generated-sources/main/java', 'generated-sources/main/grpc'
+		}
+	}
+}
+
+protobuf {
+	protoc {
+		artifact = "com.google.protobuf:protoc:${protobufVersion}"
+	}
+	plugins {
+		grpc {
+			artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}"
+		}
+	}
+	generateProtoTasks.generatedFilesBaseDir = 'generated-sources'
+
+	generateProtoTasks {
+		all()*.plugins {
+			grpc {}
+		}
+		ofSourceSet('main')
+	}
+}
+
+dependencies {
+	implementation "org.springframework.boot:spring-boot-starter:$springDependencyVersion"
+	implementation "org.springframework.boot:spring-boot-starter-validation:$springDependencyVersion"
+	implementation "org.springframework.boot:spring-boot-starter-web:$springDependencyVersion"
+	implementation "org.springframework.boot:spring-boot-starter-aop:$springDependencyVersion"
+	implementation "org.springframework.boot:spring-boot-starter-security:$springDependencyVersion"
+	implementation "org.springframework.security.oauth:spring-security-oauth2:2.1.0.RELEASE"
+	implementation "org.springframework.security:spring-security-jwt:1.0.9.RELEASE"
+
+	// gRPC
+	implementation "io.grpc:grpc-protobuf:${grpcVersion}"
+	implementation "io.grpc:grpc-stub:${grpcVersion}"
+	implementation "com.google.protobuf:protobuf-java-util:${protobufVersion}"
+	implementation "io.grpc:grpc-netty:${grpcVersion}"
+	runtimeOnly "io.grpc:grpc-netty-shaded:${grpcVersion}"
+
+	//common
+	implementation name: 'common-1.0'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
